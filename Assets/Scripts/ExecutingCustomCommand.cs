@@ -11,11 +11,11 @@ public class ExecutingCustomCommand : MonoBehaviour
     [SerializeField] TMP_InputField inputField;
     List<MethodInfo> customMethodsList = new();
     List<Action> actions = new();
-    Dictionary<MethodInfo, GameObject> keyValuePairs = new Dictionary<MethodInfo, GameObject>();
+    public Dictionary<MethodInfo, Component> keyValuePairs = new Dictionary<MethodInfo, Component>();
     public void ExecuteCommand()
     {
         ExecuteCommand(inputField.text);
-        inputField.text = "";
+        
     }
     private void Start()
     {
@@ -23,48 +23,18 @@ public class ExecutingCustomCommand : MonoBehaviour
     }
     void GetMethods()
     {
-        foreach (GameObject go in GameObject.FindObjectsOfType<GameObject>())
+        foreach (GameObject item in GameObject.FindObjectsByType<GameObject>(FindObjectsSortMode.None))
         {
-            if (go.transform.childCount > 0)
-            {
-                MethodsRecursively(go);
-            }
-            foreach (Component component in go.GetComponents<Component>())
+            foreach (Component component in item.GetComponents<MonoBehaviour>())
             {
                 Type type = component.GetType();
-
-                // Loop through all methods in this component's type
                 foreach (MethodInfo method in type.GetMethods())
                 {
                     // Check if the method has the CustomCommand attribute
                     if (method.GetCustomAttribute<CustomCommand>() != null)
                     {
-                        keyValuePairs.Add(method, go);
-                    }
-                }
-            }
-        }
-    }
-    void MethodsRecursively(GameObject obj)
-    {
-        for (int i = 0; i < obj.transform.childCount; i++)
-        {
-            if (obj.transform.GetChild(i).childCount > 0)
-            {
-                MethodsRecursively(obj.transform.GetChild(i).gameObject);
-            }
-            foreach (Component component in obj.transform.GetChild(i).GetComponents<Component>())
-            {
-                Type type = component.GetType();
-
-                // Loop through all methods in this component's type
-                foreach (MethodInfo method in type.GetMethods())
-                {
-                    // Check if the method has the CustomCommand attribute
-                    if (method.GetCustomAttribute<CustomCommand>() != null)
-                    {
-                        keyValuePairs.Add(method, obj.transform.GetChild(i).gameObject);
-                        //print("Found:" + obj.transform.GetChild(i).gameObject + " " + method);
+                        if (!keyValuePairs.ContainsKey(method))
+                            keyValuePairs.Add(method, component);
                     }
                 }
             }
@@ -72,22 +42,27 @@ public class ExecutingCustomCommand : MonoBehaviour
     }
     public void ExecuteCommand(string commandName)
     {
-        foreach (KeyValuePair<MethodInfo, GameObject> entry in keyValuePairs)
+        foreach (KeyValuePair<MethodInfo, Component> entry in keyValuePairs)
         {
             if (entry.Key.Name.Equals(commandName, StringComparison.OrdinalIgnoreCase))
             {
                 try
                 {
-                    entry.Key.Invoke(entry.Value.gameObject.GetComponent<MonoBehaviour>(), null);
+                    entry.Key.Invoke(entry.Value, null);
                     Debug.Log($"Executed Command: {entry.Key.Name}");
+                    inputField.text = "";
                     return;
                 }
                 catch (Exception ex)
                 {
                     Debug.LogError($"Error invoking method: {ex.Message}");
-                    print(entry.Value);
+                    print(entry.Value.gameObject.GetComponent<MonoBehaviour>());
+                    inputField.text = "";
                 }
             }
         }
+        Debug.LogError("No command found with: " + commandName);
+        inputField.text = "";
     }
+
 }

@@ -3,9 +3,8 @@ using UnityEngine;
 public class CommandHolder : MonoBehaviour
 {
     [CustomCommand]
-    public void Hello()
+    public void TestCommand()
     {
-        print("Helloo");
+        print("Hello from script");
     }
-    
 }

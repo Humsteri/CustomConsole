@@ -26,6 +26,7 @@ public class CustomConsole : MonoBehaviour
     Color normalLogButtonStartColor;
     Color warningLogButtonStartColor;
     Color errorLogButtonStartColor;
+    [SerializeField] ExecutingCustomCommand command;
     enum StackTraceLength
     {
         None,
@@ -55,18 +56,21 @@ public class CustomConsole : MonoBehaviour
     }
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.L))
-        {
-            print("Normal Log");
-        }
-        if (Input.GetKeyDown(KeyCode.K))
-        {
-            UnityEngine.Debug.LogError("Error log");
-        }
-        if (Input.GetKeyDown(KeyCode.J))
-        {
-            UnityEngine.Debug.LogWarning("Warning log");
-        }
+        //if (Input.GetKeyDown(KeyCode.L))
+        //{
+        //    print("Normal Log");
+        //}
+        //if (Input.GetKeyDown(KeyCode.K))
+        //{
+        //    foreach (var item in command.keyValuePairs)
+        //    {
+        //        print(item.Key + " " + item.Value);
+        //    }
+        //}
+        //if (Input.GetKeyDown(KeyCode.J))
+        //{
+        //    UnityEngine.Debug.LogWarning("Warning log");
+        //}
     }
     [CustomCommand]
     public void He()
