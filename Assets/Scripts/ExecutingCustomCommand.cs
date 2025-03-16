@@ -5,12 +5,18 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using static UnityEngine.EventSystems.EventTrigger;
+using System.Diagnostics;
+using System.Linq;
+using System.Net.NetworkInformation;
 public class ExecutingCustomCommand : MonoBehaviour
 {
 
     [SerializeField] TMP_InputField inputField;
-    List<MethodInfo> customMethodsList = new();
-    List<Action> actions = new();
+    [SerializeField] TextMeshProUGUI suggestText;
+    [SerializeField] TextMeshProUGUI suggestPrefab;
+    string suggestCommand = "";
+    [SerializeField] GameObject suggestArea;
     public Dictionary<MethodInfo, Component> keyValuePairs = new Dictionary<MethodInfo, Component>();
     public void ExecuteCommand()
     {
@@ -21,6 +27,15 @@ public class ExecutingCustomCommand : MonoBehaviour
     {
         GetMethods();
     }
+    private void Update()
+    {
+        if (suggestText.text != "" && Input.GetKeyDown(KeyCode.Tab))
+        {
+            inputField.text = suggestCommand;
+            inputField.MoveTextEnd(false);
+            suggestText.text = "";
+        }
+    }
     void GetMethods()
     {
         foreach (GameObject item in GameObject.FindObjectsByType<GameObject>(FindObjectsSortMode.None))
@@ -30,7 +45,6 @@ public class ExecutingCustomCommand : MonoBehaviour
                 Type type = component.GetType();
                 foreach (MethodInfo method in type.GetMethods())
                 {
-                    // Check if the method has the CustomCommand attribute
                     if (method.GetCustomAttribute<CustomCommand>() != null)
                     {
                         if (!keyValuePairs.ContainsKey(method))
@@ -49,20 +63,46 @@ public class ExecutingCustomCommand : MonoBehaviour
                 try
                 {
                     entry.Key.Invoke(entry.Value, null);
-                    Debug.Log($"Executed Command: {entry.Key.Name}");
+                    UnityEngine.Debug.Log($"Executed Command: {entry.Key.Name}");
                     inputField.text = "";
                     return;
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"Error invoking method: {ex.Message}");
+                    UnityEngine.Debug.LogError($"Error invoking method: {ex.Message}");
                     print(entry.Value.gameObject.GetComponent<MonoBehaviour>());
                     inputField.text = "";
                 }
             }
         }
-        Debug.LogError("No command found with: " + commandName);
-        inputField.text = "";
+        UnityEngine.Debug.LogError("No command found with: " + commandName);
+        inputField.text = "";  
     }
 
+    public void SuggestCommand()
+    {
+        string catchText = inputField.text;
+        string currentText = inputField.text;
+        if (currentText == "")
+        {
+            suggestText.text = "";
+            suggestCommand = "";
+            return;
+        }
+        foreach (KeyValuePair<MethodInfo, Component> entry in keyValuePairs)
+        {
+            if (entry.Key.Name.Contains(currentText, StringComparison.OrdinalIgnoreCase))
+            {
+                string suggestedCompletion = new String(' ', currentText.Length + 10) + "TAB => " + entry.Key.Name.ToLower();
+                suggestText.text =  currentText + suggestedCompletion.ToLower();
+
+                suggestCommand = entry.Key.Name.ToLower();
+                inputField.text = catchText.ToLower();
+                return;
+            }
+        }
+        suggestText.text = "";
+        suggestCommand = "";
+        inputField.text = catchText.ToLower();
+    }
 }
