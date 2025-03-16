@@ -1,10 +1,13 @@
+using JetBrains.Annotations;
 using System;
 using UnityEngine;
 [AttributeUsage(AttributeTargets.Method)]
 public class CustomCommand : Attribute 
 {
-    public CustomCommand()
+    public string ToolTip { get; }
+    public CustomCommand(string toolTip)
     {
-
+        this.ToolTip = toolTip;
+        
     }
 }

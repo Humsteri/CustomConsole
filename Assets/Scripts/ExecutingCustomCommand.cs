@@ -9,12 +9,15 @@ using static UnityEngine.EventSystems.EventTrigger;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.NetworkInformation;
+using UnityEngine.EventSystems;
+using Unity.VisualScripting;
 public class ExecutingCustomCommand : MonoBehaviour
 {
 
     [SerializeField] TMP_InputField inputField;
     [SerializeField] TextMeshProUGUI suggestText;
     [SerializeField] TextMeshProUGUI suggestPrefab;
+    [SerializeField] Button commandButton;
     string suggestCommand = "";
     [SerializeField] GameObject suggestArea;
     public Dictionary<MethodInfo, Component> keyValuePairs = new Dictionary<MethodInfo, Component>();
@@ -26,6 +29,7 @@ public class ExecutingCustomCommand : MonoBehaviour
     private void Start()
     {
         GetMethods();
+        ListOfCommands();
     }
     private void Update()
     {
@@ -77,6 +81,39 @@ public class ExecutingCustomCommand : MonoBehaviour
         }
         UnityEngine.Debug.LogError("No command found with: " + commandName);
         inputField.text = "";  
+    }
+    public void ListOfCommands()
+    {
+        suggestArea.SetActive(true);
+        foreach (KeyValuePair<MethodInfo, Component> entry in keyValuePairs)
+        {
+            Button butt = Instantiate(commandButton, suggestArea.transform);
+            butt.GetComponentInChildren<TextMeshProUGUI>().text = entry.Key.Name;
+            butt.onClick.AddListener(() => WriteToConsole(entry.Key.Name));
+            var attribute = entry.Key.GetCustomAttribute<CustomCommand>();
+            butt.GetComponent<PointerBehavior>().hoverText = attribute.ToolTip;
+            //butt.GetComponent<PointerBehavior>().OnPointerEnter()
+        }
+        suggestArea.SetActive(false);
+    }
+    public void ShowCommands()
+    {
+        suggestArea.SetActive(suggestArea.activeInHierarchy ? false : true);
+    }
+    public void OnMouseOverCommand()
+    {
+
+    }
+    public void OnMouseExitCommand()
+    {
+
+    }
+    public void WriteToConsole(string text)
+    {
+        inputField.text = text.ToLower();
+        inputField.MoveTextEnd(false);
+        suggestText.text = "";
+
     }
 
     public void SuggestCommand()

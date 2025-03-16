@@ -72,7 +72,7 @@ public class CustomConsole : MonoBehaviour
         //    UnityEngine.Debug.LogWarning("Warning log");
         //}
     }
-    [CustomCommand]
+    [CustomCommand("")]
     public void He()
     {
         print("Jippii");

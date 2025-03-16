@@ -1,18 +1,19 @@
+using System;
 using UnityEngine;
 
 public class CommandHolder : MonoBehaviour
 {
-    [CustomCommand]
+    [CustomCommand("ADD TOOLTIP TEXT HERE")]
     public void TestCommand()
     {
         print("Hello from script");
     }
-    [CustomCommand]
+    [CustomCommand("XD")]
     public void AnotherCommand()
     {
         print("Hello from script");
     }
-    [CustomCommand]
+    [CustomCommand("For joni")]
     public void Jahoo()
     {
         print("Hello from script");
