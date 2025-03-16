@@ -3,10 +3,14 @@ using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections.Generic;
+using UnityEngine.Pool;
+using System.Collections;
 
 public class CustomConsole : MonoBehaviour
 {
     string output = "";
+    string rawOutput = "";
     string stack = "";
     bool warning = true;
     bool normal = true;
@@ -15,6 +19,10 @@ public class CustomConsole : MonoBehaviour
     [SerializeField] GameObject normalLogButton;
     [SerializeField] GameObject warningLogButton;
     [SerializeField] GameObject errorLogButton;
+    [SerializeField] GameObject poolHolder;
+    [SerializeField] TextMeshProUGUI logPrefab;
+    [SerializeField] int amountKeptInHistory;
+    [SerializeField] ObjectPool<TextMeshProUGUI> pool;
     Color normalLogButtonStartColor;
     Color warningLogButtonStartColor;
     Color errorLogButtonStartColor;
@@ -27,6 +35,20 @@ public class CustomConsole : MonoBehaviour
     [SerializeField] GameObject logArea;
     private void Start()
     {
+        pool = new ObjectPool<TextMeshProUGUI>(() =>
+        {
+            return Instantiate(logPrefab, poolHolder.transform);
+        }, logPrefab =>
+        {
+            logPrefab.gameObject.SetActive(true);
+        }, logPrefab =>
+        {
+            logPrefab.gameObject.SetActive(false);
+            logPrefab.transform.SetParent(poolHolder.transform);
+        }, logPrefab =>
+        {
+            Destroy(logPrefab);
+        },false,5, 20);
         normalLogButtonStartColor = normalLogButton.GetComponent<Image>().color;
         warningLogButtonStartColor = warningLogButton.GetComponent<Image>().color;
         errorLogButtonStartColor = errorLogButton.GetComponent<Image>().color;
@@ -46,14 +68,40 @@ public class CustomConsole : MonoBehaviour
             UnityEngine.Debug.LogWarning("Warning log");
         }
     }
-
+    [CustomCommand]
+    public void He()
+    {
+        print("Jippii");
+    }
     void HandleLog(string logString, string stackTrace, LogType type)
     {
-
+        Color chosenColor = new Color();
+        switch (type)
+        {
+            case LogType.Error:
+                if (!error) return;
+                chosenColor = Color.red;
+                break;
+            case LogType.Assert:
+                break;
+            case LogType.Warning:
+                if (!warning) return;
+                chosenColor = Color.yellow;
+                break;
+            case LogType.Log:
+                if (!normal) return;
+                chosenColor = Color.white;
+                break;
+            case LogType.Exception:
+                break;
+            default:
+                break;
+        }
+        rawOutput = logString;
         output = "["+ System.DateTime.Now.ToString("H:mm:ss") + "]" + " " + logString;
         stack = stackTrace;
-        GameObject uiLog = new GameObject("Log");
-        TextMeshProUGUI component = uiLog.AddComponent<TextMeshProUGUI>();
+        TextMeshProUGUI component = pool.Get();
+        component.color = chosenColor;
         switch (chosenType)
         {
             case StackTraceLength.None:
@@ -69,40 +117,14 @@ public class CustomConsole : MonoBehaviour
                 break;
         }
         component.fontSize = 30;
-        uiLog.transform.SetParent(logArea.transform, false);
-        switch (type)
-        {
-            case LogType.Error:
-                if (!error)
-                {
-                    Destroy(uiLog);
-                    return;
-                }
-                component.color = Color.red;
-                break;
-            case LogType.Assert:
-                break;
-            case LogType.Warning:
-                if (!warning)
-                {
-                    Destroy(uiLog);
-                    return;
-                }
-                component.color = Color.yellow;
-                break;
-            case LogType.Log:
-                if (!normal)
-                {
-                    Destroy(uiLog);
-                    return;
-                }
-                component.color = Color.white;
-                break;
-            case LogType.Exception:
-                break;
-            default:
-                break;
-        }
+        component.transform.SetParent(logArea.transform, false);
+        //StartCoroutine(ReleaseAfterTime(component, 5f));
+    }
+    
+    IEnumerator ReleaseAfterTime(TextMeshProUGUI logItem, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        pool.Release(logItem);
     }
     public void NormalLog()
     {
