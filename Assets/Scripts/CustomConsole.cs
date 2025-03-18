@@ -48,7 +48,7 @@ public class CustomConsole : MonoBehaviour
     [SerializeField] TextMeshProUGUI logPrefab;
     [SerializeField] Animator animator;
     [SerializeField] int amountKeptInHistory;
-    public bool closed = false;
+    [HideInInspector] public bool closed = false;
 
     Color normalLogButtonStartColor;
     Color warningLogButtonStartColor;

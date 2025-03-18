@@ -289,7 +289,7 @@ GameObject:
   - component: {fileID: 47767065}
   - component: {fileID: 47767064}
   m_Layer: 5
-  m_Name: ConsoleParent
+  m_Name: CONSOLE_CANVAS_PARENT
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

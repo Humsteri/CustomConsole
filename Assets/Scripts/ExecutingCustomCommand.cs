@@ -5,12 +5,6 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
-using static UnityEngine.EventSystems.EventTrigger;
-using System.Diagnostics;
-using System.Linq;
-using System.Net.NetworkInformation;
-using UnityEngine.EventSystems;
-using Unity.VisualScripting;
 public class ExecutingCustomCommand : MonoBehaviour
 {
     #region Singleton

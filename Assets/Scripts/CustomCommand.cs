@@ -1,4 +1,3 @@
-using JetBrains.Annotations;
 using System;
 using UnityEngine;
 [AttributeUsage(AttributeTargets.Method)]
@@ -8,6 +7,5 @@ public class CustomCommand : Attribute
     public CustomCommand(string toolTip)
     {
         this.ToolTip = toolTip;
-        
     }
 }
