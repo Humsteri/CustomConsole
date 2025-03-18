@@ -31,7 +31,6 @@ public class CustomConsole : MonoBehaviour
     bool error = true;
     [Header("Logging type")]
     [SerializeField] StackTraceLength chosenType;
-
     [Header("UI Buttons")]
     [SerializeField] GameObject normalLogButton;
     [SerializeField] GameObject warningLogButton;
@@ -45,17 +44,30 @@ public class CustomConsole : MonoBehaviour
 
     [Header("Other")]
     [SerializeField] TextMeshProUGUI logPrefab;
+    [SerializeField] Button logPrefabButton;
     [SerializeField] Animator animator;
-    [SerializeField] int amountKeptInHistory;
     [HideInInspector] public bool closed = false;
-    [SerializeField] GridLayoutGroup gridLayoutGroup;
     Color normalLogButtonStartColor;
     Color warningLogButtonStartColor;
     Color errorLogButtonStartColor;
+
+    [Header("Pooling")]
+    [SerializeField] int defaultCapacity = 10;
+    [SerializeField] int maxCapacity = 100;
+    [SerializeField] float waitTimeBeforePool = 30;
     ObjectPool<TextMeshProUGUI> pool;
 
-    float shortSizeY = 30;
-    float normalSizeY = 100;
+    [Header("Custom Grid Layout Group sizes")]
+    [Tooltip("Custom grid layout so few variables can be changed")]
+    [SerializeField] GridLayoutGroupCustom gridLayoutGroup;
+    [Tooltip("Cell Size Y when Stack Trace Length is set to short")]
+    [SerializeField] float shortCellSizeY = 30f;
+    [Tooltip("Cell Size Y when Stack Trace Length is set to normal")]
+    [SerializeField] float normalCellSizeY = 100f;
+    [Tooltip("Spacing Y when Stack Trace Length is set to short")]
+    [SerializeField] float shortSpacingY = 3.5f;
+    [Tooltip("Spacing Y when Stack Trace Length is set to normal")]
+    [SerializeField] float normalSpacingY = 15f;
     enum StackTraceLength
     {
         None,
@@ -66,11 +78,12 @@ public class CustomConsole : MonoBehaviour
     {
         commandScrollView.SetActive(false);
         pool = new ObjectPool<TextMeshProUGUI>(() =>
-        {
+        { 
             return Instantiate(logPrefab, poolHolder.transform);
         }, logPrefab =>
         {
             logPrefab.gameObject.SetActive(true);
+            
         }, logPrefab =>
         {
             logPrefab.gameObject.SetActive(false);
@@ -78,7 +91,7 @@ public class CustomConsole : MonoBehaviour
         }, logPrefab =>
         {
             Destroy(logPrefab);
-        },false,5, 20);
+        },false, defaultCapacity, maxCapacity);
         normalLogButtonStartColor = normalLogButton.GetComponent<Image>().color;
         warningLogButtonStartColor = warningLogButton.GetComponent<Image>().color;
         errorLogButtonStartColor = errorLogButton.GetComponent<Image>().color;
@@ -127,25 +140,42 @@ public class CustomConsole : MonoBehaviour
         stack = stackTrace;
         TextMeshProUGUI component = pool.Get();
         component.color = chosenColor;
+
+        SetLogType(component, stackTrace);
+
+        component.fontSize = 30;
+        component.transform.SetParent(logArea.transform, false);
+        StartCoroutine(ReleaseAfterTime(component, waitTimeBeforePool));
+    }
+    void SetLogType(TextMeshProUGUI component, string stackTrace)
+    {
         switch (chosenType)
         {
             case StackTraceLength.None:
-                gridLayoutGroup.cellSize.Set(gridLayoutGroup.cellSize.x, shortSizeY);
+                gridLayoutGroup.cellSize = new Vector2(gridLayoutGroup.cellSize.x, shortCellSizeY);
+                gridLayoutGroup.spacing = new Vector2(gridLayoutGroup.spacing.x, shortSpacingY);
                 component.text = output;
                 break;
             case StackTraceLength.Normal:
-                gridLayoutGroup.cellSize.Set(gridLayoutGroup.cellSize.x, normalSizeY);
+                gridLayoutGroup.cellSize = new Vector2(gridLayoutGroup.cellSize.x, normalCellSizeY);
+                gridLayoutGroup.spacing = new Vector2(gridLayoutGroup.spacing.x, normalSpacingY);
                 component.text = output + ", " + stackTrace;
                 break;
             case StackTraceLength.Short:
+                gridLayoutGroup.cellSize = new Vector2(gridLayoutGroup.cellSize.x, shortCellSizeY);
+                gridLayoutGroup.spacing = new Vector2(gridLayoutGroup.spacing.x, shortSpacingY);
                 component.text = output + ", From: " + stackTrace.Split(new string[] { "(at " }, StringSplitOptions.None).Last();
                 break;
             default:
                 break;
         }
-        component.fontSize = 30;
-        component.transform.SetParent(logArea.transform, false);
-        //StartCoroutine(ReleaseAfterTime(component, 5f));
+    }
+    public void ClearConsole()
+    {
+        for (int i = logArea.transform.childCount - 1; i >= 0; i--)
+        {
+            pool.Release(logArea.transform.GetChild(i).GetComponent<TextMeshProUGUI>());
+        }
     }
     public void PlayAnimation()
     {
@@ -157,7 +187,8 @@ public class CustomConsole : MonoBehaviour
     IEnumerator ReleaseAfterTime(TextMeshProUGUI logItem, float delay)
     {
         yield return new WaitForSeconds(delay);
-        pool.Release(logItem);
+        if (logItem.IsActive())
+            pool.Release(logItem);
     }
     public void NormalLog()
     {

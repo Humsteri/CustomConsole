@@ -34,6 +34,10 @@ public class CommandHolder : MonoBehaviour
             }
         }
         Debug.LogError($"No GameObject found with ID: {id}.");
-
+    }
+    [CustomCommand("Clears Console")]
+    public void Clear()
+    {
+        CustomConsole.Instance.ClearConsole();
     }
 }

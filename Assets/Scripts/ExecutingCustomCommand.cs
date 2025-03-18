@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using System.Collections.Generic;
 using System.Linq;
 using static UnityEngine.EventSystems.EventTrigger;
+using static System.Net.Mime.MediaTypeNames;
 public class ExecutingCustomCommand : MonoBehaviour
 {
     #region Singleton
@@ -61,7 +62,11 @@ public class ExecutingCustomCommand : MonoBehaviour
         MousePos();
         if(ObjectHit != null && Input.GetMouseButtonDown(1))
         {
-            UnityEngine.Debug.Log($"Selected: {ObjectHit.name} which id is {ObjectHit.GetInstanceID()}");
+            UnityEngine.Debug.Log($"Selected: {ObjectHit.name} which id is {ObjectHit.GetInstanceID()}. ID copied to clipboard.");
+            TextEditor te = new TextEditor();
+            te.text = ObjectHit.GetInstanceID().ToString();
+            te.SelectAll();
+            te.Copy();
         }
         if (suggestText.text != "" && Input.GetKeyDown(KeyCode.Tab))
         {
@@ -76,6 +81,7 @@ public class ExecutingCustomCommand : MonoBehaviour
             if (index < 0)
             {
                 index = 0;
+                inputField.MoveTextEnd(false);
                 return;
             }
             inputField.text = typedWords[index];
@@ -88,6 +94,8 @@ public class ExecutingCustomCommand : MonoBehaviour
             if (index >= typedWords.Count)
             {
                 index = typedWords.Count;
+                inputField.text = "";
+                inputField.MoveTextEnd(false);
                 return;
             }
             inputField.text = typedWords[index];
