@@ -1,10 +1,11 @@
-using NUnit.Framework;
 using System;
 using System.Reflection;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using System.Linq;
+using static UnityEngine.EventSystems.EventTrigger;
 public class ExecutingCustomCommand : MonoBehaviour
 {
     #region Singleton
@@ -31,7 +32,9 @@ public class ExecutingCustomCommand : MonoBehaviour
     [SerializeField] GameObject suggestArea;
     
     string suggestCommand = "";
-    public Dictionary<MethodInfo, Component> keyValuePairs = new Dictionary<MethodInfo, Component>();
+    Dictionary<MethodInfo, Component> keyValuePairs = new Dictionary<MethodInfo, Component>();
+    List<string> typedWords = new List<string>();
+    GameObject ObjectHit;
     public void ExecuteCommand()
     {
         ExecuteCommand(inputField.text);
@@ -42,13 +45,57 @@ public class ExecutingCustomCommand : MonoBehaviour
         GetMethods();
         ListOfCommands();
     }
+    int index = 0;
+    void MousePos()
+    {
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+
+        if (Physics.Raycast(ray, out RaycastHit RayHit))
+        {
+            ObjectHit = RayHit.transform.gameObject;
+            Vector3 Hitpoint = RayHit.point;
+        }
+    }
     private void Update()
     {
+        MousePos();
+        if(ObjectHit != null && Input.GetMouseButtonDown(1))
+        {
+            UnityEngine.Debug.Log($"Selected: {ObjectHit.name} which id is {ObjectHit.GetInstanceID()}");
+        }
         if (suggestText.text != "" && Input.GetKeyDown(KeyCode.Tab))
         {
             inputField.text = suggestCommand;
             inputField.MoveTextEnd(false);
             suggestText.text = "";
+        }
+        if(Input.GetKeyDown(KeyCode.UpArrow) && inputField.isFocused)
+        {
+            if (typedWords.Count == 0) return;
+            index--;
+            if (index < 0)
+            {
+                index = 0;
+                return;
+            }
+            inputField.text = typedWords[index];
+            inputField.MoveTextEnd(false);
+        }
+        else if (Input.GetKeyDown(KeyCode.DownArrow) && inputField.isFocused)
+        {
+            if (typedWords.Count == 0) return;
+            index++;
+            if (index >= typedWords.Count)
+            {
+                index = typedWords.Count;
+                return;
+            }
+            inputField.text = typedWords[index];
+            inputField.MoveTextEnd(false);
+        }
+        else if(!inputField.isFocused)
+        {
+            index = typedWords.Count;
         }
     }
     void GetMethods()
@@ -71,50 +118,212 @@ public class ExecutingCustomCommand : MonoBehaviour
     }
     public void ExecuteCommand(string commandName)
     {
+        if(commandName != "")
+            typedWords.Add(commandName);
+        string test = commandName.Split(new string[] { " " }, StringSplitOptions.None).First();
         foreach (KeyValuePair<MethodInfo, Component> entry in keyValuePairs)
         {
-            if (entry.Key.Name.Equals(commandName, StringComparison.OrdinalIgnoreCase))
+
+            if (entry.Key.Name.Equals(test, StringComparison.OrdinalIgnoreCase))
             {
-                try
+                if (entry.Key.GetParameters().Count<ParameterInfo>() == 0)
                 {
-                    entry.Key.Invoke(entry.Value, null);
-                    UnityEngine.Debug.Log($"Executed Command: {entry.Key.Name}");
-                    inputField.text = "";
-                    return;
+                    try
+                    {
+                        entry.Key.Invoke(entry.Value, null);
+                        UnityEngine.Debug.Log($"Executed Command: {entry.Key.Name}");
+                        inputField.text = "";
+                        return;
+                    }
+                    catch (Exception ex)
+                    {
+                        UnityEngine.Debug.LogError($"Error invoking method: {ex.Message}");
+                        print(entry.Value.gameObject.GetComponent<MonoBehaviour>());
+                        inputField.text = "";
+                    }
                 }
-                catch (Exception ex)
+                else
                 {
-                    UnityEngine.Debug.LogError($"Error invoking method: {ex.Message}");
-                    print(entry.Value.gameObject.GetComponent<MonoBehaviour>());
-                    inputField.text = "";
+                    try
+                    {
+                        object[] words = commandName.Split(new char[] { ' ' }, System.StringSplitOptions.RemoveEmptyEntries)
+                            .Skip(1) // Skip the first word (command name)
+                            .Cast<object>()
+                            .ToArray();
+                        ParameterInfo[] parameters = entry.Key.GetParameters();
+                        if (words.Length != parameters.Length)
+                        {
+                            UnityEngine.Debug.LogError($"Error: Expected {parameters.Length} arguments but got {words.Length}.");
+                            return;
+                        }
+                        for (int i = 0; i < parameters.Length; i++)
+                        {
+                            //UnityEngine.Debug.Log($"Checking word {i}: {words[i]}, Expected Type: {parameters[i].ParameterType}");
+
+                            if (parameters[i].ParameterType == typeof(string))
+                            {
+                                words[i] = words[i].ToString(); 
+                            }
+                            else if (parameters[i].ParameterType == typeof(int))
+                            {
+                                if (int.TryParse(words[i].ToString(), out int intValue))
+                                {
+                                    words[i] = intValue; 
+                                }
+                                else
+                                {
+                                    UnityEngine.Debug.LogError($"Error: Could not convert '{words[i]}' to int.");
+                                    return;
+                                }
+                            }
+                            else if (parameters[i].ParameterType == typeof(float))
+                            {
+                                if (float.TryParse(words[i].ToString(), out float floatValue))
+                                {
+                                    words[i] = floatValue;
+                                }
+                                else
+                                {
+                                    UnityEngine.Debug.LogError($"Error: Could not convert '{words[i]}' to float.");
+                                    return; 
+                                }
+                            }
+                            else if (parameters[i].ParameterType == typeof(bool))
+                            {
+                                if (bool.TryParse(words[i].ToString(), out bool boolValue))
+                                {
+                                    words[i] = boolValue;
+                                }
+                                else
+                                {
+                                    UnityEngine.Debug.LogError($"Error: Could not convert '{words[i]}' to bool.");
+                                    return; 
+                                }
+                            }
+                        }
+                        entry.Key.Invoke(entry.Value, words);
+                        UnityEngine.Debug.Log($"Executed Command: {entry.Key.Name} with parameters.");
+                        inputField.text = "";
+                        return;
+                    }
+                    catch (Exception ex)
+                    {
+                        UnityEngine.Debug.LogError($"Error invoking method: {ex.Message}");
+                        print(entry.Value.gameObject.GetComponent<MonoBehaviour>());
+                        inputField.text = "";
+                        
+                    }
                 }
+                
             }
         }
+        if (commandName == "") return;
         UnityEngine.Debug.LogError("No command found with: " + commandName);
         inputField.text = "";  
     }
     public void ExecuteCommandFromButton()
     {
         string commandName = inputField.text;
+        if (commandName != "")
+            typedWords.Add(commandName);
+        string test = commandName.Split(new string[] { " " }, StringSplitOptions.None).First();
         foreach (KeyValuePair<MethodInfo, Component> entry in keyValuePairs)
         {
-            if (entry.Key.Name.Equals(commandName, StringComparison.OrdinalIgnoreCase))
+
+            if (entry.Key.Name.Equals(test, StringComparison.OrdinalIgnoreCase))
             {
-                try
+                if (entry.Key.GetParameters().Count<ParameterInfo>() == 0)
                 {
-                    entry.Key.Invoke(entry.Value, null);
-                    UnityEngine.Debug.Log($"Executed Command: {entry.Key.Name}");
-                    inputField.text = "";
-                    return;
+                    try
+                    {
+                        entry.Key.Invoke(entry.Value, null);
+                        UnityEngine.Debug.Log($"Executed Command: {entry.Key.Name}");
+                        inputField.text = "";
+                        return;
+                    }
+                    catch (Exception ex)
+                    {
+                        UnityEngine.Debug.LogError($"Error invoking method: {ex.Message}");
+                        print(entry.Value.gameObject.GetComponent<MonoBehaviour>());
+                        inputField.text = "";
+                    }
                 }
-                catch (Exception ex)
+                else
                 {
-                    UnityEngine.Debug.LogError($"Error invoking method: {ex.Message}");
-                    print(entry.Value.gameObject.GetComponent<MonoBehaviour>());
-                    inputField.text = "";
+                    try
+                    {
+                        object[] words = commandName.Split(new char[] { ' ' }, System.StringSplitOptions.RemoveEmptyEntries)
+                            .Skip(1) // Skip the first word (command name)
+                            .Cast<object>()
+                            .ToArray();
+                        ParameterInfo[] parameters = entry.Key.GetParameters();
+                        if (words.Length != parameters.Length)
+                        {
+                            UnityEngine.Debug.LogError($"Error: Expected {parameters.Length} arguments but got {words.Length}.");
+                            return;
+                        }
+                        for (int i = 0; i < parameters.Length; i++)
+                        {
+                            //UnityEngine.Debug.Log($"Checking word {i}: {words[i]}, Expected Type: {parameters[i].ParameterType}");
+
+                            if (parameters[i].ParameterType == typeof(string))
+                            {
+                                words[i] = words[i].ToString();
+                            }
+                            else if (parameters[i].ParameterType == typeof(int))
+                            {
+                                if (int.TryParse(words[i].ToString(), out int intValue))
+                                {
+                                    words[i] = intValue;
+                                }
+                                else
+                                {
+                                    UnityEngine.Debug.LogError($"Error: Could not convert '{words[i]}' to int.");
+                                    return;
+                                }
+                            }
+                            else if (parameters[i].ParameterType == typeof(float))
+                            {
+                                if (float.TryParse(words[i].ToString(), out float floatValue))
+                                {
+                                    words[i] = floatValue;
+                                }
+                                else
+                                {
+                                    UnityEngine.Debug.LogError($"Error: Could not convert '{words[i]}' to float.");
+                                    return;
+                                }
+                            }
+                            else if (parameters[i].ParameterType == typeof(bool))
+                            {
+                                if (bool.TryParse(words[i].ToString(), out bool boolValue))
+                                {
+                                    words[i] = boolValue;
+                                }
+                                else
+                                {
+                                    UnityEngine.Debug.LogError($"Error: Could not convert '{words[i]}' to bool.");
+                                    return;
+                                }
+                            }
+                        }
+                        entry.Key.Invoke(entry.Value, words);
+                        UnityEngine.Debug.Log($"Executed Command: {entry.Key.Name} with parameters.");
+                        inputField.text = "";
+                        return;
+                    }
+                    catch (Exception ex)
+                    {
+                        UnityEngine.Debug.LogError($"Error invoking method: {ex.Message}");
+                        print(entry.Value.gameObject.GetComponent<MonoBehaviour>());
+                        inputField.text = "";
+
+                    }
                 }
+
             }
         }
+        if (commandName == "") return;
         UnityEngine.Debug.LogError("No command found with: " + commandName);
         inputField.text = "";
     }

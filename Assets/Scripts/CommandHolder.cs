@@ -8,14 +8,32 @@ public class CommandHolder : MonoBehaviour
     {
         print("Hello from script");
     }
-    [CustomCommand("XD")]
+    [CustomCommand("ADD TOOLTIP TEXT HERE")]
     public void AnotherCommand()
     {
         print("Hello from script");
     }
-    [CustomCommand("For joni")]
-    public void Jahoo()
+    [CustomCommand("Expects: String, int and bool")]
+    public void Jahoo(string text, int second, bool fro)
     {
-        print("Hello from script");
+        print("Hello from script: " + text + " " + second + " " + fro);
+    }
+    [CustomCommand("Expects: GameObject ID")]
+    public void DestroyCommand(int id)
+    {
+        UnityEngine.Object[] allObjects = GameObject.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+
+        foreach (GameObject go in allObjects)
+        {
+            //Debug.Log(go + " is an active object " + go.GetInstanceID());
+            if(go.GetInstanceID() == id)
+            {
+                Destroy(go);
+                Debug.Log($"Destroyed GameObject: {go.name} which ID was: {id}");
+                return;
+            }
+        }
+        Debug.LogError($"No GameObject found with ID: {id}.");
+
     }
 }

@@ -3,7 +3,6 @@ using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using System.Collections.Generic;
 using UnityEngine.Pool;
 using System.Collections;
 
@@ -83,15 +82,15 @@ public class CustomConsole : MonoBehaviour
     }
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.L))
+        if (Input.GetKeyDown(KeyCode.P))
         {
-            print("Normal Log");
+            UnityEngine.Debug.Log("Normal log");
         }
-        if (Input.GetKeyDown(KeyCode.K))
+        if (Input.GetKeyDown(KeyCode.O))
         {
             UnityEngine.Debug.LogError("Warning log");
         }
-        if (Input.GetKeyDown(KeyCode.J))
+        if (Input.GetKeyDown(KeyCode.I))
         {
             UnityEngine.Debug.LogWarning("Warning log");
         }

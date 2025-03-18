@@ -1,7 +1,6 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.UI;
 
 public class PointerBehavior : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
@@ -13,7 +12,7 @@ public class PointerBehavior : MonoBehaviour, IPointerEnterHandler, IPointerExit
     {
         if (hoverText == "") return;
         hover.GetComponentInChildren<TextMeshProUGUI>().text = hoverText;
-        instantiated = Instantiate(hover, GameObject.Find("ConsoleParent").transform);
+        instantiated = Instantiate(hover, GameObject.Find("CONSOLE_CANVAS_PARENT").transform);
         instantiated.transform.position = eventData.position + offSet;
     }
 
