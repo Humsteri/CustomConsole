@@ -4004,6 +4004,7 @@ MonoBehaviour:
   animator: {fileID: 902683257}
   amountKeptInHistory: 5
   closed: 0
+  gridLayoutGroup: {fileID: 1045983660}
 --- !u!224 &1608899676
 RectTransform:
   m_ObjectHideFlags: 0

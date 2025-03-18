@@ -48,11 +48,14 @@ public class CustomConsole : MonoBehaviour
     [SerializeField] Animator animator;
     [SerializeField] int amountKeptInHistory;
     [HideInInspector] public bool closed = false;
-
+    [SerializeField] GridLayoutGroup gridLayoutGroup;
     Color normalLogButtonStartColor;
     Color warningLogButtonStartColor;
     Color errorLogButtonStartColor;
     ObjectPool<TextMeshProUGUI> pool;
+
+    float shortSizeY = 30;
+    float normalSizeY = 100;
     enum StackTraceLength
     {
         None,
@@ -127,9 +130,11 @@ public class CustomConsole : MonoBehaviour
         switch (chosenType)
         {
             case StackTraceLength.None:
+                gridLayoutGroup.cellSize.Set(gridLayoutGroup.cellSize.x, shortSizeY);
                 component.text = output;
                 break;
             case StackTraceLength.Normal:
+                gridLayoutGroup.cellSize.Set(gridLayoutGroup.cellSize.x, normalSizeY);
                 component.text = output + ", " + stackTrace;
                 break;
             case StackTraceLength.Short:
