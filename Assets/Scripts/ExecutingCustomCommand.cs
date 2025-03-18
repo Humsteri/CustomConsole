@@ -13,13 +13,30 @@ using UnityEngine.EventSystems;
 using Unity.VisualScripting;
 public class ExecutingCustomCommand : MonoBehaviour
 {
+    #region Singleton
+    public static ExecutingCustomCommand Instance { get; private set; }
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(this);
+        }
+        else
+        {
+            Instance = this;
+        }
+    }
+    #endregion
 
+    [Header("UI Components")]
     [SerializeField] TMP_InputField inputField;
     [SerializeField] TextMeshProUGUI suggestText;
     [SerializeField] TextMeshProUGUI suggestPrefab;
+    [SerializeField] GameObject commandScrollView;
     [SerializeField] Button commandButton;
-    string suggestCommand = "";
     [SerializeField] GameObject suggestArea;
+    
+    string suggestCommand = "";
     public Dictionary<MethodInfo, Component> keyValuePairs = new Dictionary<MethodInfo, Component>();
     public void ExecuteCommand()
     {
@@ -109,6 +126,13 @@ public class ExecutingCustomCommand : MonoBehaviour
     }
     public void ListOfCommands()
     {
+        if (suggestArea.transform.childCount > 0)
+        {
+            for (int i = 0; i < suggestArea.transform.childCount; i++)
+            {
+                Destroy(suggestArea.transform.GetChild(i).gameObject);
+            }
+        }
         suggestArea.SetActive(true);
         foreach (KeyValuePair<MethodInfo, Component> entry in keyValuePairs)
         {
@@ -117,21 +141,25 @@ public class ExecutingCustomCommand : MonoBehaviour
             butt.onClick.AddListener(() => WriteToConsole(entry.Key.Name));
             var attribute = entry.Key.GetCustomAttribute<CustomCommand>();
             butt.GetComponent<PointerBehavior>().hoverText = attribute.ToolTip;
-            //butt.GetComponent<PointerBehavior>().OnPointerEnter()
         }
-        suggestArea.SetActive(false);
+        if (CustomConsole.Instance.closed)
+        {
+            suggestArea.SetActive(true);
+            commandScrollView.SetActive(true);
+            UnityEngine.Debug.Log("Updated command list!");
+        }
+        else
+        {
+            suggestArea.SetActive(false);
+            commandScrollView.SetActive(false);
+        }
+       
     }
     public void ShowCommands()
     {
+        if (!CustomConsole.Instance.closed) return;
         suggestArea.SetActive(suggestArea.activeInHierarchy ? false : true);
-    }
-    public void OnMouseOverCommand()
-    {
-
-    }
-    public void OnMouseExitCommand()
-    {
-
+        commandScrollView.SetActive(commandScrollView.activeInHierarchy ? false : true);
     }
     public void WriteToConsole(string text)
     {
@@ -140,7 +168,6 @@ public class ExecutingCustomCommand : MonoBehaviour
         suggestText.text = "";
 
     }
-
     public void SuggestCommand()
     {
         string catchText = inputField.text;

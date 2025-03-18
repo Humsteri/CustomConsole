@@ -9,36 +9,60 @@ using System.Collections;
 
 public class CustomConsole : MonoBehaviour
 {
+    #region Singleton
+    public static CustomConsole Instance { get; private set; }
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(this);
+        }
+        else
+        {
+            Instance = this;
+        }
+    }
+    #endregion
+
     string output = "";
     string rawOutput = "";
     string stack = "";
     bool warning = true;
     bool normal = true;
     bool error = true;
+    [Header("Logging type")]
     [SerializeField] StackTraceLength chosenType;
+
+    [Header("UI Buttons")]
     [SerializeField] GameObject normalLogButton;
     [SerializeField] GameObject warningLogButton;
     [SerializeField] GameObject errorLogButton;
+
+    [Header("UI Components")]
     [SerializeField] GameObject poolHolder;
     [SerializeField] GameObject commandHolder;
+    [SerializeField] GameObject commandScrollView;
+    [SerializeField] GameObject logArea;
+
+    [Header("Other")]
     [SerializeField] TextMeshProUGUI logPrefab;
+    [SerializeField] Animator animator;
     [SerializeField] int amountKeptInHistory;
-    [SerializeField] ObjectPool<TextMeshProUGUI> pool;
+    public bool closed = false;
+
     Color normalLogButtonStartColor;
     Color warningLogButtonStartColor;
     Color errorLogButtonStartColor;
-    [SerializeField] ExecutingCustomCommand command;
-    [SerializeField] Animator animator;
-    bool closed = false;
+    ObjectPool<TextMeshProUGUI> pool;
     enum StackTraceLength
     {
         None,
         Normal,
         Short
     }
-    [SerializeField] GameObject logArea;
     private void Start()
     {
+        commandScrollView.SetActive(false);
         pool = new ObjectPool<TextMeshProUGUI>(() =>
         {
             return Instantiate(logPrefab, poolHolder.transform);
@@ -71,11 +95,6 @@ public class CustomConsole : MonoBehaviour
         {
             UnityEngine.Debug.LogWarning("Warning log");
         }
-    }
-    [CustomCommand("")]
-    public void He()
-    {
-        print("Jippii");
     }
     void HandleLog(string logString, string stackTrace, LogType type)
     {
@@ -128,6 +147,7 @@ public class CustomConsole : MonoBehaviour
     {
         closed = !closed;
         if (commandHolder.activeInHierarchy) commandHolder.SetActive(false);
+        if (commandScrollView.activeInHierarchy) commandScrollView.SetActive(false);
         animator.SetBool("Play", closed);
     }
     IEnumerator ReleaseAfterTime(TextMeshProUGUI logItem, float delay)
