@@ -82,6 +82,31 @@ public class ExecutingCustomCommand : MonoBehaviour
         UnityEngine.Debug.LogError("No command found with: " + commandName);
         inputField.text = "";  
     }
+    public void ExecuteCommandFromButton()
+    {
+        string commandName = inputField.text;
+        foreach (KeyValuePair<MethodInfo, Component> entry in keyValuePairs)
+        {
+            if (entry.Key.Name.Equals(commandName, StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    entry.Key.Invoke(entry.Value, null);
+                    UnityEngine.Debug.Log($"Executed Command: {entry.Key.Name}");
+                    inputField.text = "";
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    UnityEngine.Debug.LogError($"Error invoking method: {ex.Message}");
+                    print(entry.Value.gameObject.GetComponent<MonoBehaviour>());
+                    inputField.text = "";
+                }
+            }
+        }
+        UnityEngine.Debug.LogError("No command found with: " + commandName);
+        inputField.text = "";
+    }
     public void ListOfCommands()
     {
         suggestArea.SetActive(true);

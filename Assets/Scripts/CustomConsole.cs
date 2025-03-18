@@ -20,6 +20,7 @@ public class CustomConsole : MonoBehaviour
     [SerializeField] GameObject warningLogButton;
     [SerializeField] GameObject errorLogButton;
     [SerializeField] GameObject poolHolder;
+    [SerializeField] GameObject commandHolder;
     [SerializeField] TextMeshProUGUI logPrefab;
     [SerializeField] int amountKeptInHistory;
     [SerializeField] ObjectPool<TextMeshProUGUI> pool;
@@ -27,6 +28,8 @@ public class CustomConsole : MonoBehaviour
     Color warningLogButtonStartColor;
     Color errorLogButtonStartColor;
     [SerializeField] ExecutingCustomCommand command;
+    [SerializeField] Animator animator;
+    bool closed = false;
     enum StackTraceLength
     {
         None,
@@ -56,21 +59,18 @@ public class CustomConsole : MonoBehaviour
     }
     void Update()
     {
-        //if (Input.GetKeyDown(KeyCode.L))
-        //{
-        //    print("Normal Log");
-        //}
-        //if (Input.GetKeyDown(KeyCode.K))
-        //{
-        //    foreach (var item in command.keyValuePairs)
-        //    {
-        //        print(item.Key + " " + item.Value);
-        //    }
-        //}
-        //if (Input.GetKeyDown(KeyCode.J))
-        //{
-        //    UnityEngine.Debug.LogWarning("Warning log");
-        //}
+        if (Input.GetKeyDown(KeyCode.L))
+        {
+            print("Normal Log");
+        }
+        if (Input.GetKeyDown(KeyCode.K))
+        {
+            UnityEngine.Debug.LogError("Warning log");
+        }
+        if (Input.GetKeyDown(KeyCode.J))
+        {
+            UnityEngine.Debug.LogWarning("Warning log");
+        }
     }
     [CustomCommand("")]
     public void He()
@@ -124,7 +124,12 @@ public class CustomConsole : MonoBehaviour
         component.transform.SetParent(logArea.transform, false);
         //StartCoroutine(ReleaseAfterTime(component, 5f));
     }
-    
+    public void PlayAnimation()
+    {
+        closed = !closed;
+        if (commandHolder.activeInHierarchy) commandHolder.SetActive(false);
+        animator.SetBool("Play", closed);
+    }
     IEnumerator ReleaseAfterTime(TextMeshProUGUI logItem, float delay)
     {
         yield return new WaitForSeconds(delay);
