@@ -5,7 +5,10 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Pool;
 using System.Collections;
-
+using System.Runtime.CompilerServices;
+#if UNITY_EDITOR
+using Unity.CodeEditor;
+#endif
 public class CustomConsole : MonoBehaviour
 {
     #region Singleton
@@ -44,7 +47,6 @@ public class CustomConsole : MonoBehaviour
 
     [Header("Other")]
     [SerializeField] TextMeshProUGUI logPrefab;
-    [SerializeField] Button logPrefabButton;
     [SerializeField] Animator animator;
     [HideInInspector] public bool closed = false;
     Color normalLogButtonStartColor;
@@ -104,31 +106,56 @@ public class CustomConsole : MonoBehaviour
         }
         if (Input.GetKeyDown(KeyCode.O))
         {
-            UnityEngine.Debug.LogError("Warning log");
+            UnityEngine.Debug.LogError("Error log");
         }
         if (Input.GetKeyDown(KeyCode.I))
         {
             UnityEngine.Debug.LogWarning("Warning log");
         }
     }
+    void OpenInEditor(string fileName, [CallerLineNumber] int lineNumber = 0)
+    {
+#if UNITY_EDITOR
+        if (CodeEditor.Editor != null)
+        {
+            CodeEditor.Editor.CurrentCodeEditor.OpenProject(fileName, lineNumber, 1);
+        }
+        else
+        {
+            Debug.LogError("No external code editor is set in Unity preferences.");
+        }
+#elif !UNITY_EDITOR
+        Debug.LogError("Only supported in editor!. Would open the path to error in code editor.");
+#endif
+    }
     void HandleLog(string logString, string stackTrace, LogType type)
     {
         Color chosenColor = new Color();
+        string errorFilePath = "";
+        int errorLine = 0;
         switch (type)
         {
             case LogType.Error:
                 if (!error) return;
                 chosenColor = Color.red;
+                errorFilePath = stackTrace.Split("(at ").Last().Split(')')[0];
+                string[] parts = errorFilePath.Split(':');
+                errorFilePath = string.Join(":", parts.Take(parts.Length - 1)); 
+                errorLine = int.Parse(parts.Last());
                 break;
             case LogType.Assert:
                 break;
             case LogType.Warning:
                 if (!warning) return;
+                errorFilePath = "";
+                errorLine = 0;
                 chosenColor = Color.yellow;
                 break;
             case LogType.Log:
                 if (!normal) return;
                 chosenColor = Color.white;
+                errorFilePath = "";
+                errorLine = 0;
                 break;
             case LogType.Exception:
                 break;
@@ -140,12 +167,16 @@ public class CustomConsole : MonoBehaviour
         stack = stackTrace;
         TextMeshProUGUI component = pool.Get();
         component.color = chosenColor;
-
+        if (errorFilePath != "" && errorLine != 0)
+            component.gameObject.GetComponent<Button>().onClick.AddListener(() =>
+            {
+                OpenInEditor(errorFilePath, errorLine);
+            });
         SetLogType(component, stackTrace);
 
         component.fontSize = 30;
         component.transform.SetParent(logArea.transform, false);
-        StartCoroutine(ReleaseAfterTime(component, waitTimeBeforePool));
+        StartCoroutine(ReleaseBackToPool(component, waitTimeBeforePool));
     }
     void SetLogType(TextMeshProUGUI component, string stackTrace)
     {
@@ -184,7 +215,7 @@ public class CustomConsole : MonoBehaviour
         if (commandScrollView.activeInHierarchy) commandScrollView.SetActive(false);
         animator.SetBool("Play", closed);
     }
-    IEnumerator ReleaseAfterTime(TextMeshProUGUI logItem, float delay)
+    IEnumerator ReleaseBackToPool(TextMeshProUGUI logItem, float delay)
     {
         yield return new WaitForSeconds(delay);
         if (logItem.IsActive())
