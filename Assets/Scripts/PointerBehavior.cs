@@ -4,21 +4,26 @@ using UnityEngine.EventSystems;
 
 public class PointerBehavior : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
-    [SerializeField] GameObject hover;
-    [SerializeField] public string hoverText;
+    GameObject hover;
+    TextMeshProUGUI hoversText;
+    public string hoverText;
     [SerializeField] Vector2 offSet;
-    GameObject instantiated;
+    private void Start()
+    {
+        hover = CustomConsole.Instance.hoverInfo;
+        hoversText = hover.GetComponentInChildren<TextMeshProUGUI>();
+        hover.SetActive(false);
+    }
     public void OnPointerEnter(PointerEventData eventData)
     {
         if (hoverText == "") return;
-        hover.GetComponentInChildren<TextMeshProUGUI>().text = hoverText;
-        instantiated = Instantiate(hover, GameObject.Find("CONSOLE_CANVAS_PARENT").transform);
-        instantiated.transform.position = eventData.position + offSet;
+        hover.SetActive(true);
+        hoversText.text = hoverText;
+        hover.transform.position = eventData.position + offSet;
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        if (instantiated != null)
-            Destroy(instantiated);
+        hover.SetActive(false);
     }
 }

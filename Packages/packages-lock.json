@@ -1,5 +1,11 @@
 {
   "dependencies": {
+    "com.humsteri.custom-console": {
+      "version": "file:CustomConsole",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
       "depth": 0,

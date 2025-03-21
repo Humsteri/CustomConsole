@@ -52,6 +52,7 @@ public class CustomConsole : MonoBehaviour
     Color normalLogButtonStartColor;
     Color warningLogButtonStartColor;
     Color errorLogButtonStartColor;
+    public GameObject hoverInfo;
 
     [Header("Pooling")]
     [SerializeField] int defaultCapacity = 10;
@@ -78,7 +79,6 @@ public class CustomConsole : MonoBehaviour
     }
     private void Start()
     {
-        commandScrollView.SetActive(false);
         pool = new ObjectPool<TextMeshProUGUI>(() =>
         { 
             return Instantiate(logPrefab, poolHolder.transform);
@@ -94,6 +94,7 @@ public class CustomConsole : MonoBehaviour
         {
             Destroy(logPrefab);
         },false, defaultCapacity, maxCapacity);
+
         normalLogButtonStartColor = normalLogButton.GetComponent<Image>().color;
         warningLogButtonStartColor = warningLogButton.GetComponent<Image>().color;
         errorLogButtonStartColor = errorLogButton.GetComponent<Image>().color;
