@@ -1933,6 +1933,10 @@ PrefabInstance:
       propertyPath: openConsoleKey
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4565479013403865726, guid: 179b58b5230e5c643a18758b8f5de435, type: 3}
+      propertyPath: waitTimeBeforePool
+      value: 60
+      objectReference: {fileID: 0}
     - target: {fileID: 5014253860069812661, guid: 179b58b5230e5c643a18758b8f5de435, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
